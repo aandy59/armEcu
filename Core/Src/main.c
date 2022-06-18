@@ -141,6 +141,7 @@ volatile bool adc_flag = true;
 	//карта углов опережения зажигания
 	//углы в градусах, умноженные на 10
 	float ignition_map[][2] = {{0, 1.0},{1000, 6.5}, {2000, 28.2}, {3000, 39.3}, {4000, 43.9}, {5000, 45.5}, {6000, 45.5}, {7000, 45.5}};
+	//float ignition_map[][2] = {{0, 1.0},{1000, 2.2}, {2000, 12.3}, {3000, 21.8}, {4000, 26.3}, {5000, 27.3}, {6000, 27.9}, {7000, 27.5}};
 	#define NUM_OF_POINTS_ANGLES 8
 	//угол одного из лепестков модулятора, в градусах
 	#define MODULATOR_ANGLE 30.0f
@@ -171,17 +172,39 @@ volatile bool adc_flag = true;
 	//период ПИД регулятора
 	#define DELAY_FOR_PID 200
 	//обороты, к которым стремится ПИД
-	#define TARGET_RPM 1000
+	#define TARGET_RPM 1100
 	//ограничение снизу
 	#define MIN_OUT -4
 	//ограничение сверху
 	#define MAX_OUT 4
 	//коэффиценты ПИД
 	#define KP 0.1f
-	#define KI 0.05f
+	#define KI 0.01f
 	#define KD 0.01f
 	//скорость РХХ, шаг/сек
-	#define RHH_SPEED 400
+	#define RHH_SPEED 100
+	volatile bool rhh_flag = false;
+	
+	uint8_t tps_axis[16] = {0, 2, 4, 6, 8, 10, 14, 18, 23, 29, 37, 46, 56, 66, 80, 100};
+	uint16_t rpm_axis[16] = {600, 800, 1000, 1200, 1600, 2000, 2520, 3000, 3520, 4000, 4520, 5000, 5520, 6000, 7000, 10200};
+	float bcf[16][16] = {{143, 141, 142, 145, 148, 148, 150, 153, 156, 159, 162, 164, 166, 168, 169, 170},
+											 {138, 140, 143, 148, 149, 152, 156, 159, 162, 164, 166, 168, 169, 170, 171, 172},
+											 {128, 149, 149, 150, 165, 172, 178, 178, 180, 178, 178, 178, 178, 178, 178, 178},
+											 {129, 135, 152, 148, 169, 227, 216, 218, 208, 204, 199, 196, 194, 191, 189, 188},
+											 {104, 121, 138, 150, 182, 217, 251, 267, 247, 238, 229, 221, 214, 209, 205, 201},
+											 { 71, 108, 113, 153, 172, 228, 272, 283, 292, 278, 258, 244, 236, 229, 223, 219},
+											 { 57,  84,  94, 113, 138, 163, 277, 293, 319, 296, 265, 265, 257, 251, 246, 241},
+											 { 57,  67,  83,  99, 107, 150, 201, 258, 299, 299, 283, 285, 282, 280, 275, 267},
+											 { 41,  53,  71,  78, 105, 127, 169, 210, 235, 254, 293, 319, 333, 323, 307, 295},
+											 { 44,  45,  57,  64,  85, 109, 138, 154, 182, 203, 280, 379, 399, 351, 332, 317},
+											 { 44,  44,  48,  54,  63,  77,  96, 116, 137, 164, 256, 388, 347, 346, 331, 320},
+											 { 44,  44,  45,  48,  53,  61,  71,  85, 103, 120, 204, 248, 286, 295, 300, 299},
+											 { 44,  44,  44,  45,  48,  52,  58,  66,  78,  91, 122, 164, 201, 229, 247, 260},
+											 { 44,  44,  44,  44,  45,  47,  51,  56,  63,  73,  87, 110, 139, 167, 192, 209},
+											 { 44,  44,  44,  44,  44,  45,  47,  50,  54,  61,  69,  82, 101, 122, 146, 167},
+											 { 44,  44,  44,  44,  44,  44,  45,  47,  50,  55,  62,  71,  84, 103, 124, 146}
+	};
+	
 	
 	//Карта датчика температуры охлаждающей жидкости
 	//22 точки
@@ -191,14 +214,17 @@ volatile bool adc_flag = true;
 	float ctemp = 0;
 			
 	//карта датчика расхода воздуха
-	float maf_map[][2] = {{0, 0}, {0.3, 7.2}, {0.6, 10.9}, {0.93, 20.8}, {1.55, 45.9}, {1.87, 49.3}, {2.18, 67.6}, {2.5, 91.3}, {2.96, 123}, {3.28, 166}, {3.59, 222}};
-	//float maf_map[][2] = {{0, 0}, {0.3, 6.2}, {0.6, 9.9}, {0.93, 15.8}, {1.55, 34.9}, {1.87, 49.3}, {2.18, 67.6}, {2.5, 91.3}, {2.96, 123}, {3.28, 166}, {3.59, 222}};
+	//float maf_map[][2] = {{0, 0}, {0.3, 10.2}, {0.6, 10.9}, {0.93, 20.8}, {1.55, 45.9}, {1.87, 49.3}, {2.18, 67.6}, {2.5, 91.3}, {2.96, 123}, {3.28, 166}, {3.59, 222}};
+	float maf_map[][2] = {{0, 0}, {0.3, 6.2}, {0.6, 9.9}, {0.93, 15.8}, {1.55, 34.9}, {1.87, 49.3}, {2.18, 67.6}, {2.5, 91.3}, {2.96, 123}, {3.28, 166}, {3.59, 222}};
 	#define NUM_OF_POINTS_MAF 11
 	//потребление воздуха, кг/час
 	volatile float consumption_per_hour = 0;
 	//расход воздуха на один цикл, грамм
 	volatile float air_per_cycle = 0;
-	
+	volatile float cur_cf = 0;
+	volatile bool air_flag = false;
+	volatile bool maf_is_connected = false;	
+		
 	volatile uint16_t ADC_Data[4];
 	volatile uint16_t o2_adc_data = 0;
 	volatile uint16_t maf_adc_data = 0;
@@ -219,6 +245,7 @@ volatile bool adc_flag = true;
 		float cur_afr;
 		uint8_t rhh_step;
 		float cur_o2;
+		uint8_t tps_percent;
 	};
 	volatile struct engine_parameters eng_param;
 	
@@ -307,10 +334,10 @@ int main(void)
 
   /* Create the queue(s) */
   /* creation of USART_ISR_QUEUE */
-  USART_ISR_QUEUEHandle = osMessageQueueNew (16, sizeof(uint8_t), &USART_ISR_QUEUE_attributes);
+  USART_ISR_QUEUEHandle = osMessageQueueNew (128, sizeof(uint8_t), &USART_ISR_QUEUE_attributes);
 
   /* creation of USART_TX_QUEUE */
-  USART_TX_QUEUEHandle = osMessageQueueNew (128, sizeof(uint8_t), &USART_TX_QUEUE_attributes);
+  USART_TX_QUEUEHandle = osMessageQueueNew (512, sizeof(uint8_t), &USART_TX_QUEUE_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -822,6 +849,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler()
         TIM11->SR &= ~TIM_SR_UIF;        //сбросить флаг
 				TIM11->CR1 &= ~TIM_CR1_CEN;
 				TIM11->CNT = 0;
+				ignCoilOff;
     }
 		portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
 }
@@ -877,6 +905,10 @@ void StartItnitionTask(void *argument)
 		
 		
 		inj_flag = true;
+		air_flag = true;
+		if(!fuelPumpReleyPinState){
+			fuelPumpReleyOn;
+		}
 		
  }
   /* USER CODE END StartItnitionTask */
@@ -893,7 +925,7 @@ void StartItnitionTask(void *argument)
 void StartInjectionTask(void *argument)
 {
   /* USER CODE BEGIN StartInjectionTask */
-	fuelPumpReleyOn;
+	//fuelPumpReleyOn;
   /* Infinite loop */
   for(;;)
   {
@@ -1006,37 +1038,73 @@ void StartReadSensorsTask(void *argument)
   /* USER CODE BEGIN StartReadSensorsTask */
 	uint8_t temp;
 	HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &ADC_Data,4);
+	volatile float air_sum = 0;
+	volatile uint32_t air_counter = 0;
   /* Infinite loop */
   for(;;)
   {
 		
-		
+		osDelay(5);
 		o2_volts = ADCToVolts(ADC_Data[0]);
 		maf_volts = ADCToVolts(ADC_Data[1]);
+		air_sum+= maf_volts;
+		air_counter++;
 		tps_volts = ADCToVolts(ADC_Data[2]);
 		clt_volts = ADCToVolts(ADC_Data[3]);
 		
-		
-		injecting_time = NozzleDelay(afr, AirPerCycle(maf_volts*1.51f));
+		if(maf_is_connected == true){
+			if(air_flag == true){
+			injecting_time = NozzleDelay(afr, AirPerCycle(air_sum/(float)air_counter*1.51f));
+			//injecting_time = (uint16_t)LinInterp(tps_volts, 0.05, 0.3, 0, 100);
+				if(rot_counter < 50){
+					injecting_time = 100;
+				}
+				if(injecting_time < 30){
+				injecting_time = 30;
+				}
+			air_counter = 0;
+			air_sum = 0;
+			air_flag = false;
+			}
+		}else{
+			uint8_t rpm_axis_coord = 0;
+			uint8_t tps_axis_coord = 0;
+			for(uint8_t i = 0; i<16; i++){
+				if(eng_param.tps_percent > tps_axis[i]){ 
+					rpm_axis_coord = i;
+					break;
+				}
+			}
+			for(uint8_t i = 0; i<16; i++){
+				if(eng_param.cur_rpm > rpm_axis[i]){ 
+					tps_axis_coord = i;
+					break;
+				}
+			}
+			cur_cf = bcf[rpm_axis_coord][tps_axis_coord];
+			injecting_time = NozzleDelay(afr, cur_cf/1000.0f);
+			if(rot_counter < 50){
+					injecting_time = 100;
+				}
+		}
 		ctemp = CltVoltageToTemp(clt_volts, clt_map, NUM_OF_POINTS_CLT);
 		
-			
 		
-		if(temp < 15){afr = 8.0;}
-		else if(temp < 20){afr = 10.0;}
-		else if(temp < 30){afr = 11.0;}
-		else if(temp < 40){afr = 12.0;}
-		else if(temp < 50){afr = 13.0;}
-		else if(temp < 60){afr = 14.0;}
-		else if(temp < 70){afr = 14.0;}
-		else if(temp < 80){afr = 14.0;}
-		else {afr = 14.0;}
-		
+			if(temp < 15){afr = 10.0;}
+			else if(temp < 20){afr = 10.0;}
+			else if(temp < 30){afr = 11.0;}
+			else if(temp < 40){afr = 12.0;}
+			else if(temp < 50){afr = 13.0;}
+			else if(temp < 60){afr = 14.0;}
+			else if(temp < 70){afr = 14.7;}
+			else if(temp < 80){afr = 14.7;}
+			else {afr = 14.7;}
 		
 		cur_uoz = FindAngle(turn_around_time, ignition_map, NUM_OF_POINTS_ANGLES);
 		ign_delay = FindIgnDelay(turn_around_time, cur_uoz, MODULATOR_ANGLE);
 		bobbin_on_delay = (turn_around_time - (COIL_PUMP_TIME*1000) - (ign_delay*100))/100;
 		
+		eng_param.tps_percent = LinInterp(tps_volts, 0.05, 0.3, 0, 100);
 		eng_param.cur_afr = afr;
 		eng_param.cur_rpm = uSecToRPM(turn_around_time);
 		eng_param.cur_temp = ctemp;
@@ -1108,14 +1176,14 @@ void StartRHHTask(void *argument)
   /* USER CODE BEGIN StartRHHTask */
   /* Infinite loop */
 	stepRHH(1, 250, RHH_SPEED);
-	stepRHH(0, 40, RHH_SPEED);
-	eng_param.rhh_step = 0;
+	stepRHH(0, 30, RHH_SPEED);
+	eng_param.rhh_step = 30;
 	volatile int out;
   for(;;)
   {
-		osDelay(pdMS_TO_TICKS(200));
-		/*
-		if(tps_volts < 0.1f){
+		osDelay(100);
+		if((rhh_flag == true) && (rot_counter > 50)){
+		if(tps_volts < 0.07f){
 			out = computePID((float)eng_param.cur_rpm, TARGET_RPM, KP, KI, KD, (float)DELAY_FOR_PID/1000.0f , MIN_OUT, MAX_OUT);
 			if(out > 0){
 				if((eng_param.rhh_step + out) < 250){
@@ -1132,7 +1200,7 @@ void StartRHHTask(void *argument)
 				}
 			}
 		}
-		*/
+	}
   }
   /* USER CODE END StartRHHTask */
 }
@@ -1539,7 +1607,11 @@ void StartuartParserTask(void *argument)
 							}
 							break;
 						case 4:
-							turn_around_time = package[1];
+							if(package[1] == 1){
+								rhh_flag = true;
+							}else{
+								rhh_flag = false;
+							}
 							break;
 						case 5:
 							sprintf(TXbuf, "%s %d %s %d %s %d %c", "dir", package[1], "count", package[2], "speed", package[3],';');

@@ -3,7 +3,7 @@
 <title>Static Call Graph - [ARM-ecu\ARM-ecu.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image ARM-ecu\ARM-ecu.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Sat Jun 04 21:58:29 2022
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Wed Jun 15 23:05:16 2022
 <BR><P>
 <H3>Maximum Stack Usage =        416 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -890,7 +890,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(i.main)
 </UL>
-<P><STRONG><a name="[4f]"></a>StartInjectionTask</STRONG> (Thumb, 94 bytes, Stack size 0 bytes, main.o(i.StartInjectionTask))
+<P><STRONG><a name="[4f]"></a>StartInjectionTask</STRONG> (Thumb, 88 bytes, Stack size 0 bytes, main.o(i.StartInjectionTask))
 <BR><BR>[Stack]<UL><LI>Max Depth = 68<LI>Call Chain = StartInjectionTask &rArr; Delay_100us &rArr; ulTaskNotifyTake &rArr; prvAddCurrentTaskToDelayedList &rArr; vListInsert
 </UL>
 <BR>[Calls]<UL><LI><a href="#[7c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;vPortExitCritical
@@ -899,7 +899,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(i.main)
 </UL>
-<P><STRONG><a name="[4e]"></a>StartItnitionTask</STRONG> (Thumb, 174 bytes, Stack size 0 bytes, main.o(i.StartItnitionTask))
+<P><STRONG><a name="[4e]"></a>StartItnitionTask</STRONG> (Thumb, 196 bytes, Stack size 0 bytes, main.o(i.StartItnitionTask))
 <BR><BR>[Stack]<UL><LI>Max Depth = 68<LI>Call Chain = StartItnitionTask &rArr; Delay_100us &rArr; ulTaskNotifyTake &rArr; prvAddCurrentTaskToDelayedList &rArr; vListInsert
 </UL>
 <BR>[Calls]<UL><LI><a href="#[7c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;vPortExitCritical
@@ -910,21 +910,22 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(i.main)
 </UL>
-<P><STRONG><a name="[52]"></a>StartRHHTask</STRONG> (Thumb, 38 bytes, Stack size 0 bytes, main.o(i.StartRHHTask))
-<BR><BR>[Stack]<UL><LI>Max Depth = 96<LI>Call Chain = StartRHHTask &rArr; stepRHH &rArr; osDelay &rArr; vTaskDelay &rArr; xTaskResumeAll
+<P><STRONG><a name="[52]"></a>StartRHHTask</STRONG> (Thumb, 312 bytes, Stack size 32 bytes, main.o(i.StartRHHTask))
+<BR><BR>[Stack]<UL><LI>Max Depth = 128<LI>Call Chain = StartRHHTask &rArr; stepRHH &rArr; osDelay &rArr; vTaskDelay &rArr; xTaskResumeAll
 </UL>
 <BR>[Calls]<UL><LI><a href="#[9f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;osDelay
 <LI><a href="#[a4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;stepRHH
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(i.main)
 </UL>
-<P><STRONG><a name="[50]"></a>StartReadSensorsTask</STRONG> (Thumb, 718 bytes, Stack size 64 bytes, main.o(i.StartReadSensorsTask))
+<P><STRONG><a name="[50]"></a>StartReadSensorsTask</STRONG> (Thumb, 988 bytes, Stack size 64 bytes, main.o(i.StartReadSensorsTask))
 <BR><BR>[Stack]<UL><LI>Max Depth = 152<LI>Call Chain = StartReadSensorsTask &rArr; __aeabi_dmul &rArr; _double_epilogue &rArr; _double_round
 </UL>
 <BR>[Calls]<UL><LI><a href="#[68]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_ui2d
 <LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dmul
 <LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2f
 <LI><a href="#[84]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_ADC_Start_DMA
+<LI><a href="#[9f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;osDelay
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(i.main)
 </UL>
@@ -949,7 +950,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(i.main)
 </UL>
-<P><STRONG><a name="[54]"></a>StartuartParserTask</STRONG> (Thumb, 884 bytes, Stack size 168 bytes, main.o(i.StartuartParserTask))
+<P><STRONG><a name="[54]"></a>StartuartParserTask</STRONG> (Thumb, 892 bytes, Stack size 168 bytes, main.o(i.StartuartParserTask))
 <BR><BR>[Stack]<UL><LI>Max Depth = 416<LI>Call Chain = StartuartParserTask &rArr; parseString &rArr; __0sscanf &rArr; __vfscanf_char &rArr; __vfscanf &rArr; _scanf_int
 </UL>
 <BR>[Calls]<UL><LI><a href="#[a9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xTaskGenericNotify
@@ -984,7 +985,7 @@ Global Symbols
 <P><STRONG><a name="[43]"></a>SystemInit</STRONG> (Thumb, 12 bytes, Stack size 0 bytes, system_stm32f4xx.o(i.SystemInit))
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f401xc.o(.text)
 </UL>
-<P><STRONG><a name="[20]"></a>TIM1_TRG_COM_TIM11_IRQHandler</STRONG> (Thumb, 58 bytes, Stack size 0 bytes, main.o(i.TIM1_TRG_COM_TIM11_IRQHandler))
+<P><STRONG><a name="[20]"></a>TIM1_TRG_COM_TIM11_IRQHandler</STRONG> (Thumb, 64 bytes, Stack size 0 bytes, main.o(i.TIM1_TRG_COM_TIM11_IRQHandler))
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f401xc.o(RESET)
 </UL>
 <P><STRONG><a name="[22]"></a>TIM2_IRQHandler</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, stm32f4xx_it.o(i.TIM2_IRQHandler))
@@ -1072,7 +1073,8 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[bf]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;vTaskDelay
 </UL>
-<BR>[Called By]<UL><LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartRHHTask
+<BR>[Called By]<UL><LI><a href="#[50]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartReadSensorsTask
+<LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartRHHTask
 <LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartEEPROMTask
 <LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartDefaultTask
 <LI><a href="#[a4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;stepRHH
