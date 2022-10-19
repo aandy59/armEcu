@@ -204,7 +204,65 @@ volatile bool adc_flag = true;
 											 { 44,  44,  44,  44,  44,  45,  47,  50,  54,  61,  69,  82, 101, 122, 146, 167},
 											 { 44,  44,  44,  44,  44,  44,  45,  47,  50,  55,  62,  71,  84, 103, 124, 146}
 	};
+	float bcf_correction[16][16] = { {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+																	 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+	};
 	
+	float lambda_map[][2] = {
+														{8.95,   0.8800},
+														{9.11,   0.8797},
+														{9.26,   0.8792},
+														{9.41,   0.8787},
+														{9.56,   0.8782},
+														{9.71,   0.8778},
+														{9.87,   0.8775},
+														{10.02,  0.8771},
+														{10.17,  0.8757},
+														{10.32,  0.8752},
+														{10.47,  0.8747},
+														{10.63,  0.8742},
+														{10.78,  0.8738},
+														{10.93,  0.8735},
+														{11.08,  0.8731},
+														{11.24,  0.8727},
+														{11.39,  0.8722},
+														{11.54,  0.8717},
+														{11.69,  0.8712},
+														{11.86,  0.8690},
+														{12.04,  0.8520},
+														{12.23,  0.8410},
+														{12.39,  0.8320},
+														{12.62,  0.8180},
+														{12.83,  0.8050},
+														{13.03,  0.7920},
+														{13.21,  0.7790},
+														{13.4,   0.7630},
+														{13.59,  0.7410},
+														{13.82,  0.7180},
+														{14.1,   0.6830},
+														{14.43,  0.6060},
+														{14.83,  0.2310},
+														{15.31,  0.1710},
+														{15.85,  0.1070},
+														{16.47,  0.0630},
+														{17.15,  0.0500},
+														{17.9,   0.0380},
+														{18.7,   0.0330}
+};
 	
 	//Карта датчика температуры охлаждающей жидкости
 	//22 точки
@@ -223,7 +281,7 @@ volatile bool adc_flag = true;
 	volatile float air_per_cycle = 0;
 	volatile float cur_cf = 0;
 	volatile bool air_flag = false;
-	volatile bool maf_is_connected = false;	
+	volatile uint8_t fuel_calc_mode = 1;	
 		
 	volatile uint16_t ADC_Data[4];
 	volatile uint16_t o2_adc_data = 0;
@@ -1040,6 +1098,8 @@ void StartReadSensorsTask(void *argument)
 	HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &ADC_Data,4);
 	volatile float air_sum = 0;
 	volatile uint32_t air_counter = 0;
+	uint8_t rpm_axis_coord = 0;
+	uint8_t tps_axis_coord = 0;
   /* Infinite loop */
   for(;;)
   {
@@ -1052,59 +1112,64 @@ void StartReadSensorsTask(void *argument)
 		tps_volts = ADCToVolts(ADC_Data[2]);
 		clt_volts = ADCToVolts(ADC_Data[3]);
 		
-		if(maf_is_connected == true){
-			if(air_flag == true){
-			injecting_time = NozzleDelay(afr, AirPerCycle(air_sum/(float)air_counter*1.51f));
-			//injecting_time = (uint16_t)LinInterp(tps_volts, 0.05, 0.3, 0, 100);
-				if(rot_counter < 50){
-					injecting_time = 100;
+		switch(fuel_calc_mode){
+			case 0:
+				if(air_flag == true){
+					injecting_time = NozzleDelay(afr, AirPerCycle(air_sum/(float)air_counter*1.51f));
+					if(rot_counter < 50){
+						injecting_time = 100;
+					}
+					if(injecting_time < 30){
+						injecting_time = 30;
+					}
+				air_counter = 0;
+				air_sum = 0;
+				air_flag = false;
 				}
-				if(injecting_time < 30){
-				injecting_time = 30;
+				break;
+			case 1:
+				injecting_time = LinInterp(tps_volts, 0.05, 0.33, 35, 100)/afr*14.7f;
+				break;
+			case 2:
+				for(uint8_t i = 0; i<16; i++){
+					if(eng_param.tps_percent > tps_axis[i]){ 
+						rpm_axis_coord = i;
+						break;
+					}
 				}
-			air_counter = 0;
-			air_sum = 0;
-			air_flag = false;
+				for(uint8_t i = 0; i<16; i++){
+					if(eng_param.cur_rpm > rpm_axis[i]){ 
+						tps_axis_coord = i;
+						break;
+					}
+				}
+				air_per_cycle = bcf[rpm_axis_coord][tps_axis_coord];
+				cur_cf = bcf[rpm_axis_coord][tps_axis_coord];
+				injecting_time = NozzleDelay(afr, cur_cf/1000.0f);
+				if(rot_counter < 20){
+						injecting_time = 150;
+					}
+				break;
 			}
-		}else{
-			uint8_t rpm_axis_coord = 0;
-			uint8_t tps_axis_coord = 0;
-			for(uint8_t i = 0; i<16; i++){
-				if(eng_param.tps_percent > tps_axis[i]){ 
-					rpm_axis_coord = i;
-					break;
-				}
-			}
-			for(uint8_t i = 0; i<16; i++){
-				if(eng_param.cur_rpm > rpm_axis[i]){ 
-					tps_axis_coord = i;
-					break;
-				}
-			}
-			cur_cf = bcf[rpm_axis_coord][tps_axis_coord];
-			injecting_time = NozzleDelay(afr, cur_cf/1000.0f);
-			if(rot_counter < 50){
-					injecting_time = 100;
-				}
-		}
+		
 		ctemp = CltVoltageToTemp(clt_volts, clt_map, NUM_OF_POINTS_CLT);
 		
 		
-			if(temp < 15){afr = 10.0;}
-			else if(temp < 20){afr = 10.0;}
-			else if(temp < 30){afr = 11.0;}
-			else if(temp < 40){afr = 12.0;}
-			else if(temp < 50){afr = 13.0;}
-			else if(temp < 60){afr = 14.0;}
-			else if(temp < 70){afr = 14.7;}
-			else if(temp < 80){afr = 14.7;}
-			else {afr = 14.7;}
+			if(ctemp < 15){afr = 4.0;}
+			else if(ctemp < 20){afr = 6.0;}
+			else if(ctemp < 30){afr = 8.0;}
+			else if(ctemp < 40){afr = 9.0;}
+			else if(ctemp < 50){afr = 10.0;}
+			else if(ctemp < 60){afr = 11.0;}
+			else if(ctemp < 70){afr = 12.0;}
+			else if(ctemp < 80){afr = 12.0;}
+			else {afr = 12.0;}
 		
 		cur_uoz = FindAngle(turn_around_time, ignition_map, NUM_OF_POINTS_ANGLES);
 		ign_delay = FindIgnDelay(turn_around_time, cur_uoz, MODULATOR_ANGLE);
 		bobbin_on_delay = (turn_around_time - (COIL_PUMP_TIME*1000) - (ign_delay*100))/100;
 		
-		eng_param.tps_percent = LinInterp(tps_volts, 0.05, 0.3, 0, 100);
+		eng_param.tps_percent = LinInterp(tps_volts, 0.05, 0.33, 0, 100);
 		eng_param.cur_afr = afr;
 		eng_param.cur_rpm = uSecToRPM(turn_around_time);
 		eng_param.cur_temp = ctemp;
@@ -1545,7 +1610,7 @@ void StartEEPROMTask(void *argument)
 		taskENTER_CRITICAL();
 		sprintf(TXbuf, "%c,%d,%f,%f,%d,%d,%d,%f,%f%c", 'd', eng_param.cur_rpm, eng_param.cur_temp, eng_param.cur_uoz, eng_param.cur_ign_delay, eng_param.cur_injecting_time, eng_param.rhh_step, eng_param.cur_o2, eng_param.cur_afr, ';');
 		sendInfoToUart(TXbuf);
-		sprintf(TXbuf, "%s,%f,%f,%f,%f,%f%c", "d2", o2_volts, clt_volts, tps_volts, maf_volts, consumption_per_hour, ';');
+		sprintf(TXbuf, "%s,%f,%f,%f,%f,%f%c", "d2", o2_volts, clt_volts, tps_volts, maf_volts, air_per_cycle, ';');
 		sendInfoToUart(TXbuf);
 		taskEXIT_CRITICAL();
 		
